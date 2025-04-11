@@ -72,7 +72,7 @@ Key Queries and Visualizations:
 🔵 Customers aged **26–35** for both **men and women** consistently spend the most — key target segment  
 🟡 **Occupations 14, 8, 15, 12, and 17** lead in **average** spending; segment by profession to enhance personalization  
 🟣 Customers with **2 years in the same city** have the highest average purchase, signaling loyalty potential  
-🛒 Product categories **1, 5, and 8** for both **men and women** are the most frequently purchased — optimize these for availability and upsell opportunities. **However**, the men spend have significantly more purchase than women
+🛒 Product categories **1, 5, and 8** for both **men and women** are the most frequently purchased — optimize these for availability and upsell opportunities. **However**, the men have significantly more purchase than women
 
 ---
 
