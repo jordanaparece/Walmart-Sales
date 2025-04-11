@@ -1,0 +1,268 @@
+-- Creating table to import the data
+CREATE TABLE walmart (
+    User_ID BIGINT,
+    Product_ID TEXT,
+    Gender TEXT,
+    Age TEXT,
+    Occupation INT,
+    City_Category TEXT,
+    Stay_In_Current_City_Years TEXT,
+    Marital_Status INT,
+    Product_Category INT,
+    Purchase INT
+);
+
+-- Check the data
+SELECT *
+FROM walmart
+
+-- Data cleaning
+UPDATE walmart
+SET gender = 'M'
+WHERE gender IS NULL
+
+UPDATE walmart
+SET age = '0-17'
+WHERE age IS NULL
+
+UPDATE walmart
+SET occupation = '8'
+WHERE occupation IS NULL
+
+UPDATE walmart
+SET city_category = 'B'
+WHERE city_category IS NULL
+
+UPDATE walmart
+SET marital_status = '0'
+WHERE marital_status IS NULL
+
+UPDATE walmart
+SET product_category = '15' -- Chose 15 as the default because it is the median product category by count
+WHERE product_category IS NULL
+
+UPDATE walmart
+SET purchase = '9263' -- Average purchase as the default for NULL values
+WHERE purchase IS NULL
+
+-- Removing the "+" from this column
+-- Changing the column into an integer for performing aggregate functions like AVG(), COUNT(), etc.
+UPDATE walmart
+SET Stay_In_Current_City_Years = REPLACE(Stay_In_Current_City_Years, '+', '');
+
+ALTER TABLE walmart
+ALTER COLUMN Stay_In_Current_City_Years TYPE INTEGER
+USING Stay_In_Current_City_Years::INTEGER;
+
+
+-- Main business question to answer: what factors influence customer purchasing behavior the most,
+-- and how do these patterns vary by demographics and location?
+
+-- The main question provides insight on:
+	-- who spends the most?
+	-- where and when are purchase the highest?
+	-- which segments or product categories driver revenue?
+
+-- Average revenue by age group and gender
+-- TABLEAU VISUALIZATION
+SELECT
+	age,
+	gender,
+	ROUND(AVG(purchase), 2) AS avg_revenue
+FROM 
+	walmart
+GROUP BY
+	age,
+	gender
+ORDER BY
+	avg_revenue DESC
+	
+-- Total revenue by age group and gender
+-- TABLEAU VISUALIZATION
+SELECT
+	age,
+	gender,
+	SUM(purchase) AS total_revenue
+FROM
+	walmart
+GROUP BY
+	age,
+	gender
+ORDER BY
+	total_revenue DESC
+
+
+-- Revenue by city category
+-- TABLEAU VISUALIZATION
+WITH revenue_by_city AS (
+	SELECT
+		city_category,
+		SUM(purchase) AS total_revenue
+	FROM
+		walmart
+	GROUP BY
+		city_category
+)
+SELECT
+	city_category,
+	total_revenue
+FROM 
+	revenue_by_city
+ORDER BY
+	total_revenue DESC
+
+-- Top 5 occupations by average spend
+-- TABLEAU VISUALIZATION
+SELECT
+	occupation, 
+	ROUND(AVG(purchase), 2) AS avg_purchase
+FROM
+	walmart
+GROUP BY 
+	occupation
+HAVING AVG(Purchase) >= (
+    SELECT 
+		AVG(Purchase)
+    FROM 
+		walmart
+)
+ORDER BY 
+	avg_purchase DESC
+LIMIT 5;
+
+-- Repeat customer ranking
+SELECT
+	user_id,
+	SUM(purchase) AS total_spent,
+	RANK() OVER(ORDER BY SUM(purchase) DESC) as ranking
+FROM
+	walmart
+GROUP BY
+	user_id
+ORDER BY
+	total_spent DESC
+
+-- Impact of city tenure on spending
+-- TABLEAU VISUALIZATION
+SELECT
+	stay_in_current_city_years,
+	ROUND(AVG(purchase), 2) AS avg_spend
+FROM
+	walmart
+GROUP BY
+	stay_in_current_city_years
+
+-- Impact of city tenure on spending comparisons
+SELECT
+	user_id,
+  	stay_in_current_city_years,
+  	purchase,
+  	ROUND(AVG(purchase) OVER(PARTITION BY stay_in_current_city_years), 2) AS avg_for_city_tenure,
+  	CASE
+  		WHEN purchase > AVG(purchase) OVER(PARTITION BY stay_in_current_city_years) THEN 'Above Average'
+		WHEN purchase < AVG(purchase) OVER(PARTITION BY stay_in_current_city_years) THEN 'Below Average'
+		ELSE 'Average'
+	END AS above_or_below_avg
+FROM
+	walmart
+WHERE
+	stay_in_current_city_years = '0' -- Can substitute for whichever group
+
+
+-- Most popular product categories by gender
+-- TABLEAU VISUALIZATION
+SELECT
+	product_category,
+	COUNT(product_category) AS product_count,
+	gender
+FROM 
+	walmart
+GROUP BY
+	gender,
+	product_category
+
+-- Purchase trends across age groups
+-- TABLEAU VISUALIZATIONS
+SELECT
+	age,
+	ROUND(AVG(purchase), 2) AS avg_purchase
+FROM
+	walmart
+GROUP BY
+	age
+ORDER BY
+	ROUND(AVG(purchase), 2) DESC
+
+-- High-value customers by age
+-- TABLEAU VISUALIZATION
+SELECT
+	user_id,
+	age,
+	total_purchase
+FROM (
+	SELECT
+		user_id,
+		age,
+		SUM(purchase) AS total_purchase
+	FROM
+		walmart
+	GROUP BY
+		user_id,
+		age
+)
+WHERE 
+	total_purchase > 5000000
+ORDER BY
+	total_purchase DESC
+
+-- Ranking of products by revenue
+-- TABLEAU VISUALIZATION
+SELECT
+	product_id,
+	SUM(purchase) AS product_revenue,
+	RANK() OVER(ORDER BY SUM(purchase) DESC) AS ranking
+FROM
+	walmart
+GROUP BY
+	product_id
+HAVING
+	SUM(purchase) > 20000000
+ORDER BY
+	product_revenue DESC
+
+-- The following is the same as above but using a CTE
+WITH total_revenue AS (
+	SELECT
+		product_id,
+		SUM(purchase) AS product_revenue
+	FROM
+		walmart
+	GROUP BY
+		product_id
+)
+SELECT
+	product_id,
+	product_revenue,
+	RANK() OVER(ORDER BY product_revenue DESC) AS total_rev
+FROM
+	total_revenue
+WHERE
+	product_revenue > 20000000
+GROUP BY
+	product_id,
+	product_revenue
+
+-- Average purchase by marital status and gender
+-- TABLEAU VISUALIZATION
+SELECT
+	marital_status,
+	gender,
+	ROUND(AVG(purchase), 2) AS avg_revenue
+FROM
+	walmart
+GROUP BY
+	marital_status,
+	gender
+ORDER BY
+	ROUND(AVG(purchase), 2) DESC
+
