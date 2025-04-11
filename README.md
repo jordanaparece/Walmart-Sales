@@ -53,7 +53,7 @@ The dataset contains over 550,000 Walmart transactions with the following fields
   
 > https://public.tableau.com/app/profile/jordan.aparece/viz/WalmartSales_17443494819710/Dashboard1
 
-Key Visualizations:
+Key Queries and Visualizations:
 
 🧑‍🤝‍🧑 Average & Total Purchase by Age and Gender  
 🏙️ Revenue by City Category  
